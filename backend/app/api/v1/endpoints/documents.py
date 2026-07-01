@@ -171,7 +171,7 @@ async def update_document(
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
     document_id: uuid.UUID, current_user: CurrentUser, db: DbSession
-) -> None:
+):
     document = await _get_owned_document(db, document_id, current_user.id)
 
     # Remove vectors + stored file, then the row (chunks cascade in Postgres).

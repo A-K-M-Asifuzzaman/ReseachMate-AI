@@ -62,7 +62,7 @@ async def refresh(payload: RefreshRequest, db: DbSession) -> Token:
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(_: CurrentUser) -> None:
+async def logout(_: CurrentUser):
     """Stateless JWT logout — the client discards its tokens."""
     return None
 
