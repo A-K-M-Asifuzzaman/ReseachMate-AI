@@ -98,6 +98,9 @@ class Settings(BaseSettings):
     RERANK_TOP_N: int = 6
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 150
+    # pdfplumber table extraction is CPU-heavy (pure-Python, holds the GIL) and the
+    # tables aren't used by retrieval — keep it off, especially on small instances.
+    EXTRACT_TABLES: bool = False
 
     # ─── Storage ────────────────────────────────────────────────────────────
     STORAGE_BACKEND: Literal["local", "s3"] = "local"

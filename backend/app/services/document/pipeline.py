@@ -5,6 +5,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.chunk import Chunk
 from app.models.document import Document, DocumentStatus
@@ -30,7 +31,7 @@ class DocumentPipeline:
 
     def _extract_and_chunk(self, local_path: str) -> tuple[dict, list[TextChunk], int]:
         """Blocking CPU work — run inside a thread."""
-        extracted = extract_pdf(local_path, with_tables=True)
+        extracted = extract_pdf(local_path, with_tables=settings.EXTRACT_TABLES)
         extracted = clean_document(extracted)
         bib = extract_bibliographic_metadata(extracted)
         chunks = chunk_document(extracted)
