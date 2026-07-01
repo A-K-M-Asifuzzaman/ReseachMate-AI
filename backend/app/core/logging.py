@@ -41,8 +41,20 @@ def configure_logging() -> None:
         cache_logger_on_first_use=True,
     )
 
-    # Quiet noisy third-party loggers
-    for noisy in ("httpx", "httpcore", "sentence_transformers", "urllib3"):
+    # Quiet noisy third-party loggers (pdfminer in particular floods at DEBUG).
+    for noisy in (
+        "httpx",
+        "httpcore",
+        "sentence_transformers",
+        "urllib3",
+        "pdfminer",
+        "pdfplumber",
+        "PIL",
+        "transformers",
+        "huggingface_hub",
+        "filelock",
+        "asyncio",
+    ):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 

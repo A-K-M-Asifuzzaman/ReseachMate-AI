@@ -18,4 +18,9 @@ def get_embedder() -> BaseEmbedder:
 
         return SentenceTransformerEmbedder()
 
+    if provider == "openai":
+        from app.services.embedding.openai_embedder import OpenAIEmbedder
+
+        return OpenAIEmbedder()
+
     raise ValueError(f"Unknown EMBEDDING_PROVIDER: {settings.EMBEDDING_PROVIDER!r}")

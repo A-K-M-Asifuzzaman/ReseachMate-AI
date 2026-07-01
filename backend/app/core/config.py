@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     DATABASE_URL: str | None = None
+    SQL_ECHO: bool = False  # log every SQL statement (very verbose)
+    # Create tables at startup even in production (skip Alembic). Handy for a
+    # one-click free-tier deploy; prefer migrations for real production.
+    AUTO_CREATE_TABLES: bool = False
 
     @computed_field  # type: ignore[prop-decorator]
     @property

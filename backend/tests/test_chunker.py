@@ -38,6 +38,19 @@ def test_chunks_are_bounded_and_sectioned():
     assert all(c.page_number in (1, 2) for c in chunks)
 
 
+def test_cleaner_strips_nul_and_control_chars():
+    # PDFs sometimes yield NUL (0x00) which Postgres text/jsonb cannot store.
+    dirty = "Faithful\x00 RAG\x07 with\x1f sparse\ttabs\nand newlines"
+    page = ExtractedPage(page_number=1, text=dirty)
+    cleaned = clean_document(ExtractedDocument(pages=[page]))
+    text = cleaned.full_text
+    assert "\x00" not in text
+    assert "\x07" not in text
+    assert "\x1f" not in text
+    assert "\t" in text and "\n" in text  # legitimate whitespace preserved
+    assert "Faithful RAG with sparse" in text
+
+
 def test_cleaner_removes_repeated_headers_and_hyphenation():
     pages = [
         ExtractedPage(page_number=i, text="ACME JOURNAL\nInter-\nesting content here.\n1")

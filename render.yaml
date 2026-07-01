@@ -1,0 +1,52 @@
+# Render blueprint for the ResearchMate backend (free tier).
+# In Render: New → Blueprint → point at this repo. Then fill the `sync: false`
+# secrets in the dashboard (they are not committed here).
+services:
+  - type: web
+    name: researchmate-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements-deploy.txt
+    startCommand: gunicorn app.main:app -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT --workers 1 --timeout 120
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTO_CREATE_TABLES
+        value: "true"                 # create tables on first boot (no Alembic step)
+      - key: EMBEDDING_PROVIDER
+        value: openai                 # no torch → fits the free tier
+      - key: EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: EMBEDDING_DIM
+        value: "1536"
+      - key: RERANKER_ENABLED
+        value: "false"
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_MODEL
+        value: gpt-4o-mini            # cheap default
+      - key: LLM_MODEL_HEAVY
+        value: gpt-4o-mini            # keep KG extraction cheap too
+      - key: SECRET_KEY
+        generateValue: true           # Render generates a strong random value
+      - key: STORAGE_BACKEND
+        value: local
+      # ─── secrets you paste in the Render dashboard ───
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USER
+        sync: false
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        sync: false                   # set to your Vercel URL

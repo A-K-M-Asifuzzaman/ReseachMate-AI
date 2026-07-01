@@ -9,7 +9,7 @@ from app.core.logging import get_logger
 from app.models.chunk import Chunk
 from app.models.document import Document, DocumentStatus
 from app.services.document.chunker import chunk_document
-from app.services.document.cleaner import clean_document
+from app.services.document.cleaner import clean_document, sanitize_text
 from app.services.document.metadata import extract_bibliographic_metadata
 from app.services.document.pdf_extractor import extract_pdf
 from app.services.document.types import TextChunk
@@ -61,15 +61,17 @@ class DocumentPipeline:
             records: list[VectorRecord] = []
             for chunk, vector in zip(chunks, embeddings):
                 chunk_id = uuid.uuid4()
+                content = sanitize_text(chunk.content)
+                section = sanitize_text(chunk.section) if chunk.section else None
                 db.add(
                     Chunk(
                         id=chunk_id,
                         document_id=document.id,
                         user_id=document.user_id,
                         chunk_index=chunk.index,
-                        content=chunk.content,
+                        content=content,
                         page_number=chunk.page_number,
-                        section=chunk.section,
+                        section=section,
                         token_count=chunk.token_count,
                         chunk_metadata=chunk.metadata,
                     )
@@ -84,8 +86,8 @@ class DocumentPipeline:
                             "user_id": str(document.user_id),
                             "chunk_index": chunk.index,
                             "page_number": chunk.page_number,
-                            "section": chunk.section,
-                            "content": chunk.content,
+                            "section": section,
+                            "content": content,
                         },
                     )
                 )
@@ -94,10 +96,10 @@ class DocumentPipeline:
 
             # Fill in bibliographic fields only where the user hasn't provided them.
             if not document.title or document.title == document.filename:
-                document.title = bib["title"] or document.filename
-            document.authors = document.authors or bib["authors"]
+                document.title = sanitize_text(bib["title"]) or document.filename
+            document.authors = document.authors or sanitize_text(bib["authors"] or "") or None
             document.year = document.year or bib["year"]
-            document.abstract = document.abstract or bib["abstract"]
+            document.abstract = document.abstract or sanitize_text(bib["abstract"] or "") or None
             document.num_pages = num_pages
             document.num_chunks = len(chunks)
             document.status = DocumentStatus.READY

@@ -13,10 +13,12 @@ logger = get_logger(__name__)
 _QUERY_PREFIXES = {
     "bge": "Represent this sentence for searching relevant passages: ",
     "e5": "query: ",
+    "generic": "",
 }
 _DOC_PREFIXES = {
     "bge": "",
     "e5": "passage: ",
+    "generic": "",
 }
 
 
@@ -24,7 +26,9 @@ def _family(model_name: str) -> str:
     name = model_name.lower()
     if "e5" in name:
         return "e5"
-    return "bge"  # sensible default; harmless for generic ST models
+    if "bge" in name:
+        return "bge"
+    return "generic"  # e.g. all-MiniLM — trained without an instruction prefix
 
 
 class SentenceTransformerEmbedder(BaseEmbedder):

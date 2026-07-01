@@ -17,7 +17,7 @@ from app.core.config import settings
 
 engine = create_async_engine(
     settings.sqlalchemy_database_uri,
-    echo=settings.DEBUG and settings.ENVIRONMENT == "development",
+    echo=settings.SQL_ECHO,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,

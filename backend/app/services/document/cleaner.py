@@ -5,8 +5,18 @@ from collections import Counter
 
 from app.services.document.types import ExtractedDocument, ExtractedPage
 
+# NUL (0x00) and other C0 control chars. Postgres text/jsonb cannot store NUL, and
+# PDFs not-infrequently yield them; strip them (keep tab/newline/carriage-return).
+_CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 # Hyphenation at line breaks:  "atten-\ntion"  ->  "attention"
 _HYPHEN_BREAK = re.compile(r"(\w+)-\n(\w+)")
+
+
+def sanitize_text(text: str) -> str:
+    """Remove characters Postgres can't store (NUL + control chars)."""
+    if not text:
+        return text
+    return _CONTROL_CHARS.sub("", text)
 # Collapse 3+ newlines and stray whitespace
 _MULTI_NEWLINE = re.compile(r"\n{3,}")
 _TRAILING_WS = re.compile(r"[ \t]+\n")
@@ -49,7 +59,7 @@ def clean_document(doc: ExtractedDocument) -> ExtractedDocument:
 
     cleaned_pages: list[ExtractedPage] = []
     for page in doc.pages:
-        text = _HYPHEN_BREAK.sub(r"\1\2", page.text)
+        text = _HYPHEN_BREAK.sub(r"\1\2", sanitize_text(page.text))
 
         kept: list[str] = []
         for line in text.splitlines():

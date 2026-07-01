@@ -31,8 +31,9 @@ async def lifespan(app: FastAPI):
     configure_logging()
     logger.info("startup", app=settings.APP_NAME, env=settings.ENVIRONMENT)
 
-    # Create tables in dev; production should run Alembic migrations instead.
-    if settings.ENVIRONMENT != "production":
+    # Create tables in dev (or when AUTO_CREATE_TABLES is set); production should
+    # normally run Alembic migrations instead.
+    if settings.ENVIRONMENT != "production" or settings.AUTO_CREATE_TABLES:
         try:
             await init_db()
         except Exception as exc:  # noqa: BLE001
@@ -45,6 +46,20 @@ async def lifespan(app: FastAPI):
         await get_vector_store().ensure_collection()
     except Exception as exc:  # noqa: BLE001
         logger.warning("qdrant_unavailable_at_startup", error=str(exc))
+
+    # Warm the embedding model now (loads/downloads weights once) so no incoming
+    # HTTP request — e.g. registration during an upload — is ever starved by a
+    # first-time model load happening on a worker thread.
+    import asyncio
+
+    try:
+        from app.services.embedding import get_embedder
+
+        embedder = get_embedder()
+        await asyncio.to_thread(embedder.embed_query, "warmup")
+        logger.info("embedding_model_warmed", model=settings.EMBEDDING_MODEL)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("embedding_warmup_failed", error=str(exc))
 
     yield
 
